@@ -25,6 +25,11 @@ h2{font-size:15px;margin:22px 0 8px;color:var(--mut);text-transform:uppercase;le
 .row button{flex:none;border:0;background:var(--ac);color:#fff;font:inherit;font-size:14px;padding:9px 14px;border-radius:10px;cursor:pointer}
 .row button.ok{background:#1fa971}
 .note{font-size:12px;color:var(--mut);margin-top:14px}
+.bar{background:var(--ac);color:#fff;text-align:center;font-size:13px;padding:9px 12px;line-height:1.35}
+.bar a{color:#fff;font-weight:700;text-decoration:underline}
+.chk{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--mut);margin-bottom:10px}
+.chk input{width:18px;height:18px;accent-color:var(--ac)}
+.row small b{background:var(--ac);color:#fff;border-radius:6px;padding:1px 6px;margin-left:6px;font-size:10px}
 .pal button.sel{background:var(--ac);color:#fff;border-color:var(--ac)}
 #pxi{margin-top:8px;width:100%;padding:10px 12px;font:inherit;font-size:16px;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:10px}
 #pxo{margin:10px 0;padding:12px;background:var(--card);border:1px solid var(--bd);border-radius:14px;overflow-x:auto;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;line-height:1.15;white-space:pre}
@@ -33,6 +38,7 @@ h2{font-size:15px;margin:22px 0 8px;color:var(--mut);text-transform:uppercase;le
 </style>
 </head>
 <body>
+<div class="bar">Этот сайт разработан одним человеком. Обратная связь — Телеграм <a href="https://t.me/Nbivw" target="_blank" rel="noopener">@Nbivw</a></div>
 <main>
 <h1>✨ Красивый текст ✨</h1>
 <p class="sub">Введите текст — получите варианты с символами, рамками и шрифтами.</p>
@@ -51,9 +57,10 @@ h2{font-size:15px;margin:22px 0 8px;color:var(--mut);text-transform:uppercase;le
 <div id="frames"></div>
 
 <h2>Шрифты и эффекты</h2>
+<label class="chk"><input type="checkbox" id="tr"> Русский → латиница (транслит) для шрифтов без метки RU</label>
 <div id="fonts"></div>
 
-<p class="note">Шрифты (жирный, курсив, рукописный и др.) работают только с латиницей и цифрами. Кириллицу украшают рамки, символы, подчёркивание и зачёркивание. Шрифт из символов поддерживает и кириллицу, и латиницу, и цифры.</p>
+<p class="note">Шрифты с меткой RU работают с русским текстом. Остальные понимают только латиницу и цифры — включите транслит, и русские слова превратятся в латиницу. Кириллицу украшают рамки, символы, подчёркивание и зачёркивание. Шрифт из символов поддерживает и кириллицу, и латиницу, и цифры.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -96,7 +103,7 @@ t=>`•°¯\`•• ${t} ••´¯°•`,t=>`♪♫ ${t} ♫♪`,t=>`⚡ ${t} �
 function row(label,text){
  const d=document.createElement('div');d.className='row';
  const w=document.createElement('div');w.className='t';
- if(label){const s=document.createElement('small');s.textContent=label;w.appendChild(s)}
+ if(label){const s=document.createElement('small');s.textContent=label;if(RUSET.has(label)){const bb=document.createElement('b');bb.textContent='RU';s.appendChild(bb)}w.appendChild(s)}
  const sp=document.createElement('span');sp.textContent=text;w.appendChild(sp);
  const b=document.createElement('button');b.textContent='Копировать';
  b.onclick=async()=>{
@@ -110,7 +117,7 @@ function render(){
  const t=inp.value.trim()||'Ваш текст';
  const F=$('frames'),N=$('fonts');F.innerHTML='';N.innerHTML='';
  frames.forEach(f=>F.appendChild(row('',f(t))));
- fonts.forEach(([n,f])=>N.appendChild(row(n,f(t))));
+ fonts.concat(fonts2).forEach(([n,f])=>N.appendChild(row(n,f(RUSET.has(n)||!tr?t:translit(t)))));
  pix();
 }
 const raw=`A .###. #...# ##### #...# #...#
@@ -196,6 +203,49 @@ $('pxc').onclick=async()=>{const b=$('pxc');
  try{await navigator.clipboard.writeText(pxText)}catch(x){const ta=document.createElement('textarea');ta.value=pxText;document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(_){}ta.remove()}
  b.textContent='Готово ✓';b.classList.add('ok');setTimeout(()=>{b.textContent='Копировать';b.classList.remove('ok')},1200)};
 chips();
+let tr=false;
+const ch=k=>String.fromCharCode(k);
+const RUSET=new Set(['Подчёркнутый','Зачёркнутый','С точками','Между букв']);
+const trm={а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'yo',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'kh',ц:'ts',ч:'ch',ш:'sh',щ:'shch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya'};
+const translit=t=>[...t].map(c=>{const l=c.toLowerCase();if(!(l in trm))return c;const r=trm[l];return c===l?r:r.charAt(0).toUpperCase()+r.slice(1)}).join('');
+const mk=(a,b)=>{const m={};const B=Array.isArray(b)?b:[...b];[...a].forEach((c,i)=>{m[c]=B[i]});return t=>[...t].map(c=>m[c]!==undefined?m[c]:c).join('')};
+const rex=(up,lo,dg,ex)=>t=>[...t].map(c=>ex[c]||range(up,lo,dg)(c)).join('');
+const sep=s=>t=>t.split(' ').map(w=>[...w].join(s)).join('   ');
+const grk=mk('АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяё','ΛБΒΓΔΣЖƷИЙΚɅΜΗΘΠΡϹΤΥΦΧЦЧШЩЪЫЬƐЮЯαбβγδεжʒийκλμηοπρϲτυφχцчшщъыьɛюяε');
+const udm=mk('abcdefghijklmnopqrstuvwxyzабвгдежзийклмнопрстуфхцчшщъыьэюяё',['ɐ','q','ɔ','p','ǝ','ɟ','ƃ','ɥ','ᴉ','ɾ','ʞ','l','ɯ','u','o','d','b','ɹ','s','ʇ','n','ʌ','ʍ','x','ʎ','z','ɐ','ƍ','ʚ','ɹ','ɓ','ǝ','ж','ε','и','ņ','ʞ','ʎ','ɯ','н','о','u','d','ɔ','ʇ','ʎ','ɸ','х','ǹ','һ','м','м','q','ıq','q','є','ою','ʁ','ǝ']);
+const Z=[];for(let k=0x300;k<=0x36F;k++)Z.push(ch(k));
+const sup=mk('abcdefghijklmnoprstuvwxyz0123456789','ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ⁰¹²³⁴⁵⁶⁷⁸⁹');
+const boxed=base=>t=>[...t.toUpperCase()].map(c=>/[A-Z]/.test(c)?String.fromCodePoint(base+c.charCodeAt(0)-65):c).join('');
+const fonts2=[
+['Надчёркнутый',comb(ch(0x305)),1],
+['Двойное подчёркивание',comb(ch(0x333)),1],
+['Волна поверх',comb(ch(0x334)),1],
+['Косая черта',comb(ch(0x338)),1],
+['Греческий стиль',grk,1],
+['Перевёрнутый',t=>[...udm(t.toLowerCase())].reverse().join(''),1],
+['Через ♥',sep(' ♥ '),1],
+['Через ✦',sep(' ✦ '),1],
+['Через •',sep('•'),1],
+['Через ~',sep('~'),1],
+['В скобках 【】',t=>[...t].map(c=>c===' '?'  ':'【'+c+'】').join(''),1],
+['ЧеРеДоВаНиЕ',t=>{let i=0;return [...t].map(c=>c===' '?c:(i++%2?c.toLowerCase():c.toUpperCase())).join('')},1],
+['ВСЕ ЗАГЛАВНЫЕ',t=>t.toUpperCase(),1],
+['строчные',t=>t.toLowerCase(),1],
+['Сердечки между словами',t=>t.split(' ').join(' ♥ '),1],
+['Глитч',t=>[...t].map((c,i)=>c===' '?c:c+Z[(i*7)%Z.length]+Z[(i*13+5)%Z.length]+Z[(i*29+11)%Z.length]).join(''),1],
+['Sans',range(0x1D5A0,0x1D5BA,0x1D7E2)],
+['Sans курсив',range(0x1D608,0x1D622)],
+['Жирный курсив с засечками',range(0x1D468,0x1D482)],
+['Двойной контур',rex(0x1D538,0x1D552,0x1D7D8,{C:'ℂ',H:'ℍ',N:'ℕ',P:'ℙ',Q:'ℚ',R:'ℝ',Z:'ℤ'})],
+['Рукописный лёгкий',rex(0x1D49C,0x1D4B6,undefined,{B:'ℬ',E:'ℰ',F:'ℱ',H:'ℋ',I:'ℐ',L:'ℒ',M:'ℳ',R:'ℛ',e:'ℯ',g:'ℊ',o:'ℴ'})],
+['Готический лёгкий',rex(0x1D504,0x1D51E,undefined,{C:'ℭ',H:'ℌ',I:'ℑ',R:'ℜ',Z:'ℨ'})],
+['В квадратах',boxed(0x1F130)],
+['Чёрные квадраты',boxed(0x1F170)],
+['Чёрные кружки',boxed(0x1F150)],
+['Надстрочные',t=>sup(t.toLowerCase())]
+];
+fonts2.forEach(x=>{if(x[2])RUSET.add(x[0])});
+$('tr').addEventListener('change',e=>{tr=e.target.checked;render()});
 inp.addEventListener('input',render);
 render();
 </script>
